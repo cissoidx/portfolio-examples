@@ -28,8 +28,8 @@ python train_gpt2.py \
     --layers-per-ipu 1 7 8 8 \
     --matmul-proportion 0.2 0.15 0.15 0.15 \
     --ipus-per-replica 4 \
-    --gradient-accumulation 1024 \
-    --batches-per-step 16 \
+    --gradient-accumulation 512 \
+    --batches-per-step 8 \
     --batch-size 4 \
     --embedding-serialization-factor 6 \
     --mlp-serialization-factor 1 \
@@ -37,6 +37,6 @@ python train_gpt2.py \
     --enable-half-partials True \
     --loss-scaling 50000 \
     --train-path generated \
-    --num-workers 64 \
+    --compile-only \
     --save-model-path './checkpoints/gpt2_medium'
 

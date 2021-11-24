@@ -33,7 +33,7 @@ from datetime import datetime
 from tqdm import trange, tqdm
 import pickle
 from utils import load_dataset, _WorkerInit, get_lr_scheduler, get_optimizer, collate_fn, sync_metrics, \
-    str_to_bool, outline_attribute, _get_layer_ipu, recomputation_checkpoint, SerializedLinear, calculate_acc
+    str_to_bool, outline_attribute, _get_layer_ipu, recomputation_checkpoint, SerializedLinear, calculate_acc, get_generated_datum
 from ipu_options import get_options
 from poptorch import DataLoader
 from poptorch.enums import DataLoaderMode
@@ -72,6 +72,8 @@ def set_args():
                         help='executable cache dir')
     parser.add_argument('--training-steps', default=10000, type=int, required=False, help='training steps')
     parser.add_argument('--pretrained-model', default='', type=str, required=False, help='pretrained model path')
+    parser.add_argument("--compile-only", type=str_to_bool, nargs="?", const=True, default=False,
+                        help="Create an offline IPU target that can only be used for offline compilation.")
 
     ## dataset
     parser.add_argument('--train-path', default='data/train.pkl', type=str, required=False, help='dataset path')
@@ -240,6 +242,20 @@ if __name__ == "__main__":
     scheduler = get_lr_scheduler(optimizer, args.lr_schedule, args.lr_warmup, steps_per_epoch * args.epochs)
 
     poptorch_model = poptorch.trainingModel(model, opts, optimizer=optimizer)
+
+    # Compile model
+    logger("---------- Compilation/Loading from Cache Started ---------")
+    start_compile = time.perf_counter()
+    datum = get_generated_datum(args)
+    poptorch_model.compile(*datum)
+    duration_compilation = time.perf_counter() - start_compile
+    logger(f"Compiled/Loaded model in {duration_compilation} secs")
+    logger("-----------------------------------------------------------")
+
+    # Save model and end here if compile only mode is enabled
+    if args.compile_only:
+        logger("Model successfully compiled. Exiting now as '--compile-only' argument was passed.")
+        sys.exit(0)
 
     # Training loop
     steps_finished = 0

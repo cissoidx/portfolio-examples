@@ -93,6 +93,40 @@ def load_dataset(logger, args):
 
     return train_dataset, val_dataset
 
+class GeneratedPretrainingDataset(Dataset):
+    def __init__(self, vocab_size, sequence_length, seed=42):
+        self.vocab_size = vocab_size
+        self.sequence_length = sequence_length
+        self.seed = seed
+        self.data = self.generate_data()
+
+    def generate_data(self):
+        with torch.random.fork_rng():
+            torch.manual_seed(self.seed)
+            input_ids = torch.randint(0, self.vocab_size,
+                                   [self.sequence_length],
+                                   dtype=torch.long)
+            label = input_ids
+
+        return input_ids, label
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, __):
+        return self.data
+
+def get_generated_datum(config):
+    samples_per_step = config.replication_factor * config.gradient_accumulation * config.batch_size * config.batches_per_step
+    result = []
+    dataset = GeneratedPretrainingDataset(config.vocab_size,
+                                          config.max_len)
+    data = (dataset[i] for i in range(samples_per_step))
+    for batches in zip(*data):
+        result.append(torch.stack(batches))
+    return result
+
+
 def calculate_acc(logit, labels, ignore_index=-100):
     mask = (labels != ignore_index).float()
     non_pad_mask = mask.sum(-1).unsqueeze(-1)
@@ -321,48 +355,3 @@ class SerializedEmbedding(nn.Module):
             else:
                 x_sum = x
         return x_sum
-
-
-def load_weight(model, state_dict):
-    old_keys = []
-    new_keys = []
-    for key in state_dict.keys():
-        new_key = None
-        if key.endswith(".g"):
-            new_key = key[:-2] + ".weight"
-        elif key.endswith(".b"):
-            new_key = key[:-2] + ".bias"
-        elif key.endswith(".w"):
-            new_key = key[:-2] + ".weight"
-        if new_key:
-            old_keys.append(key)
-            new_keys.append(new_key)
-    for old_key, new_key in zip(old_keys, new_keys):
-        state_dict[new_key] = state_dict.pop(old_key)
-
-    missing_keys = []
-    unexpected_keys = []
-    error_msgs = []
-    # copy state_dict so _load_from_state_dict can modify it
-    metadata = getattr(state_dict, "_metadata", None)
-    state_dict = state_dict.copy()
-    if metadata is not None:
-        state_dict._metadata = metadata
-
-    def load(module, prefix=""):
-        local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
-        module._load_from_state_dict(
-            state_dict, prefix, local_metadata, True, missing_keys, unexpected_keys, error_msgs
-        )
-        for name, child in module._modules.items():
-            if child is not None:
-                load(child, prefix + name + ".")
-
-    start_model = model
-    if hasattr(model, "transformer") and all(not s.startswith('transformer.') for s in state_dict.keys()):
-        start_model = model.transformer
-    load(start_model, prefix="")
-
-    # Make sure we are still sharing the output and input embeddings after loading weights
-    model.set_tied()
-    return model

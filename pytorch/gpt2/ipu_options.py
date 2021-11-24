@@ -65,8 +65,8 @@ def get_options(config):
     opts.randomSeed(config.seed)
     opts.setExecutionStrategy(
         poptorch.PipelinedExecution(poptorch.AutoStage.AutoIncrement))
-    # if config.compile_only:
-    #     opts.useOfflineIpuTarget()
+    if config.compile_only:
+        opts.useOfflineIpuTarget()
 
     mem_prop = {
         f'IPU{i}': config.matmul_proportion[i]
@@ -82,14 +82,14 @@ def get_options(config):
         opts.Precision.setPartialsType(torch.float16)
 
     # PopART options
-    # opts._Popart.set("disableGradAccumulationTensorStreams", True)
-    # opts._Popart.set("subgraphCopyingStrategy", int(popart.SubgraphCopyingStrategy.JustInTime))
-    # opts._Popart.set("outlineThreshold", 10.0)
-    # opts._Popart.set("accumulateOuterFragmentSettings.schedule",
-    #                  int(popart.AccumulateOuterFragmentSchedule.OverlapMemoryOptimized))
-    # opts._Popart.set("accumulateOuterFragmentSettings.excludedVirtualGraphs", ["0"])
+    opts._Popart.set("disableGradAccumulationTensorStreams", True)
+    opts._Popart.set("subgraphCopyingStrategy", int(popart.SubgraphCopyingStrategy.JustInTime))
+    opts._Popart.set("outlineThreshold", 10.0)
+    opts._Popart.set("accumulateOuterFragmentSettings.schedule",
+                     int(popart.AccumulateOuterFragmentSchedule.OverlapMemoryOptimized))
+    opts._Popart.set("accumulateOuterFragmentSettings.excludedVirtualGraphs", ["0"])
     # Enable patterns for better throughput and memory reduction
-    # opts._Popart.set("subgraphCopyingStrategy", int(popart.SubgraphCopyingStrategy.JustInTime))
+    opts._Popart.set("subgraphCopyingStrategy", int(popart.SubgraphCopyingStrategy.JustInTime))
     opts._Popart.set("scheduleNonWeightUpdateGradientConsumersEarly", True)
     opts._Popart.setPatterns({"TiedGather": True, "TiedGatherAccumulate": True, "UpdateInplacePrioritiesForIpu": True})
 

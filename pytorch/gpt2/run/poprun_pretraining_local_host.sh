@@ -19,13 +19,12 @@ python train_gpt2.py \
     --layers-per-ipu 1 7 8 8 \
     --matmul-proportion 0.2 0.15 0.15 0.15 \
     --ipus-per-replica 4 \
-    --gradient-accumulation 1024 \
-    --batches-per-step 16 \
+    --gradient-accumulation 512 \
+    --batches-per-step 8 \
     --batch-size 4 \
     --embedding-serialization-factor 6 \
     --mlp-serialization-factor 1 \
     --recompute-checkpoint-every-layer True \
     --enable-half-partials True \
     --train-path './data/wikicorpus_en_one_article_per_line.pkl' \
-    --num-workers 64 \
     --save-model-path './checkpoints/gpt2_medium' 2>&1 | tee logs/gpt2_medium_30522_$time.log
