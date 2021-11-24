@@ -71,18 +71,18 @@ def set_args():
     parser.add_argument('--executable-cache-dir', default=None, type=str, required=False,
                         help='executable cache dir')
     parser.add_argument('--training-steps', default=10000, type=int, required=False, help='training steps')
-    parser.add_argument("--export-onnx", type=str_to_bool, nargs="?", const=True, default=False, help="export onnx or not")
+    parser.add_argument('--pretrained-model', default='', type=str, required=False, help='pretrained model path')
 
     ## dataset
     parser.add_argument('--train-path', default='data/train.pkl', type=str, required=False, help='dataset path')
     parser.add_argument('--max-len', default=128, type=int, required=False, help='max length of input sequence')
-    parser.add_argument('--stride', default=64, type=int, required=False, help='stride window size to sample dataset')
+    parser.add_argument('--stride', default=128, type=int, required=False, help='stride window size to sample dataset')
     parser.add_argument('--val-num', type=int, default=0, help='validate dataset length')
     parser.add_argument('--seed', type=int, default=1234, help='random seed')
     parser.add_argument('--num-workers', type=int, default=4, help="workers for dataloader")
     parser.add_argument("--async-dataloader", type=str_to_bool, nargs="?", const=True, default=False,
                         help="async dataloader")
-    parser.add_argument('--vocab-size', type=int, default=21128, help="vocab size if generate mock data")
+    parser.add_argument('--vocab-size', type=int, default=30522, help="vocab size if generate mock data")
 
     ## train
     parser.add_argument('--epochs', default=1, type=int, required=False, help='epochs for training')
@@ -90,7 +90,7 @@ def set_args():
     parser.add_argument('--optimizer', default='AdamW', type=str, required=False, help='optimizer')
     parser.add_argument('--weight-decay', default=0.0, type=float, required=False, help='weight_decay')
     parser.add_argument('--learning-rate', default=0.00001, type=float, required=False, help='learning_rate')
-    parser.add_argument('--loss-scaling', default=10000.0, type=float, required=False, help='loss_scaling')
+    parser.add_argument('--loss-scaling', default=50000.0, type=float, required=False, help='loss_scaling')
     parser.add_argument('--lr-warmup', default=0.1, type=float, required=False, help='lr_warmup')
     parser.add_argument('--lr-schedule', default='constant', type=str, required=False, help='lr_schedule')
     parser.add_argument('--log-steps', default=1, type=int, required=False, help='log_steps')
@@ -143,9 +143,12 @@ class GTP2Wrapper(nn.Module):
     def __init__(self, args):
         super().__init__()
 
-        model_config = MODEL_CONFIG[args.model]
-        self.config = GPT2Config.from_json_file(model_config)
-        self.model = GPT2LMHeadModel(config=self.config)
+        if args.pretrained_model:  # load pretrained model
+            sel.model = GPT2LMHeadModel.from_pretrained(args.pretrained_model)
+        else:  # init model
+            model_config = MODEL_CONFIG[args.model]
+            self.config = GPT2Config.from_json_file(model_config)
+            self.model = GPT2LMHeadModel(config=self.config)
 
         for layer in self.model.transformer.h:
             GPT2Attn = OptimizedGPT2Attention(self.model.config)
@@ -206,7 +209,6 @@ if __name__ == "__main__":
                    name='model-' + str(args.model) + ' ipus-' + \
                         str(args.ipus_per_replica) + ' bs-' + str(args.batch_size))
         wandb_config = vars(args)
-        # wandb_config['sdk_version'] = get_sdk_version()
         wandb.config.update(wandb_config)
 
     # Dataloader
@@ -232,21 +234,6 @@ if __name__ == "__main__":
     logger("-----------------------------------------------------------")
 
     model = GTP2Wrapper(args).half().train()
-
-    if args.export_onnx:
-        input_ids = np.random.randint(low=1, high=args.vocab_size, size=(1, args.max_len))
-        input_ids = torch.tensor(input_ids, dtype=torch.long)
-        inputs = (input_ids, input_ids)
-        torch.onnx.export(model.float(),  # model being run
-                          inputs,  # model input (or a tuple for multiple inputs)
-                          f"{args.model}.onnx",  # where to save the model (can be a file or file-like object)
-                          export_params=True,  # store the trained parameter weights inside the model file
-                          opset_version=10,  # the ONNX version to export the model to
-                          do_constant_folding=True,  # whether to execute constant folding for optimization
-                          input_names=['input'],  # the model's input names
-                          output_names=['output'],  # the model's output names
-                          dynamic_axes={'input': {0: 'batch_size'},  # variable length axes
-                                        'output': {0: 'batch_size'}})
 
     optimizer = get_optimizer(args.optimizer, args.weight_decay, args.learning_rate, args.loss_scaling, model,
                               use_popdist=args.use_popdist)

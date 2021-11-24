@@ -94,11 +94,6 @@ def load_dataset(logger, args):
     return train_dataset, val_dataset
 
 def calculate_acc(logit, labels, ignore_index=-100):
-    # _, logit = logit.max(dim=-1)
-    # non_pad_mask = labels.ne(ignore_index)
-    # n_correct = logit.eq(labels).masked_select(non_pad_mask).sum().item()
-    # n_word = non_pad_mask.sum().item()
-    # return n_correct/n_word
     mask = (labels != ignore_index).float()
     non_pad_mask = mask.sum(-1).unsqueeze(-1)
     return (logit.argmax(dim=-1) == labels).float().mul(mask).div(non_pad_mask).sum(-1).mean()

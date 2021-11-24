@@ -21,8 +21,9 @@ import pickle
 import numpy as np
 from tqdm import tqdm
 
+
 class WikicorpusTextFormatting:
-    def __init__(self, wiki_path, output_filename, recursive = False):
+    def __init__(self, wiki_path, output_filename, recursive=False):
         self.wiki_path = wiki_path
         self.recursive = recursive
         self.output_filename = output_filename
@@ -50,6 +51,7 @@ class WikicorpusTextFormatting:
                             else:
                                 if article_open:
                                     article_lines.append(line)
+
 
 def main(args):
     # Step 1: merge the data into one txt file
@@ -85,6 +87,9 @@ def main(args):
 
         # And Save it
         tokenizer.save("gpt2-bpe-tokenizer.json", pretty=True)
+
+        # Use the generated file
+        tokenizer = Tokenizer.from_file("gpt2-bpe-tokenizer.json")
     else:
         tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
         sep_id = tokenizer.sep_token_id
@@ -116,6 +121,7 @@ def main(args):
         pickle.dump(text_list, f)
     print("finish preprocessing data,the result is stored in {}".format(output_path))
     print("mean of text len:{},median of text len:{},max len:{}".format(len_mean, len_median, len_max))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
