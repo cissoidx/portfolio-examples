@@ -1,0 +1,5 @@
+transformers>=4.12.5
+numpy
+scipy
+wandb
+horovod
