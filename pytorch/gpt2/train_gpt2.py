@@ -243,17 +243,16 @@ if __name__ == "__main__":
 
     poptorch_model = poptorch.trainingModel(model, opts, optimizer=optimizer)
 
-    # Compile model
-    logger("---------- Compilation/Loading from Cache Started ---------")
-    start_compile = time.perf_counter()
-    datum = get_generated_datum(args)
-    poptorch_model.compile(*datum)
-    duration_compilation = time.perf_counter() - start_compile
-    logger(f"Compiled/Loaded model in {duration_compilation} secs")
-    logger("-----------------------------------------------------------")
-
     # Save model and end here if compile only mode is enabled
     if args.compile_only:
+        # Compile model
+        logger("---------- Compilation/Loading from Cache Started ---------")
+        start_compile = time.perf_counter()
+        datum = get_generated_datum(args)
+        poptorch_model.compile(*datum)
+        duration_compilation = time.perf_counter() - start_compile
+        logger(f"Compiled/Loaded model in {duration_compilation} secs")
+        logger("-----------------------------------------------------------")
         logger("Model successfully compiled. Exiting now as '--compile-only' argument was passed.")
         sys.exit(0)
 

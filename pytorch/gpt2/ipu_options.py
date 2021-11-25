@@ -55,8 +55,6 @@ def get_options(config):
     opts.deviceIterations(config.batches_per_step)
     opts.Training.gradientAccumulation(config.gradient_accumulation)
     opts.Training.accumulationAndReplicationReductionType(poptorch.ReductionType.Mean)
-    # if config.auto_loss_scaling is True:
-    #     opts.Training.setAutomaticLossScaling(True)
     opts.anchorMode(poptorch.AnchorMode.Sum)
     opts.TensorLocations.setOptimizerLocation(
         poptorch.TensorLocationSettings()
@@ -93,24 +91,6 @@ def get_options(config):
     opts._Popart.set("scheduleNonWeightUpdateGradientConsumersEarly", True)
     opts._Popart.setPatterns({"TiedGather": True, "TiedGatherAccumulate": True, "UpdateInplacePrioritiesForIpu": True})
 
-    # if config.synthetic_data:
-    #     opts.enableSyntheticData(int(popart.SyntheticDataMode.RandomNormal))
-
-    # engine_options = {
-    #     "opt.useAutoloader": "true",
-    #     "target.syncReplicasIndependently": "true",
-    # }
-    # if config.profile:
-    #     engine_options = {
-    #         **engine_options,
-    #         **{
-    #             "debug.allowOutOfMemory": "true",
-    #             "autoReport.directory": config.profile_dir,
-    #             "profiler.format": "v3",
-    #             "autoReport.all": "true",
-    #         }
-    #     }
-    # opts._Popart.set("engineOptions", engine_options)
     opts._Popart.set("saveInitializersToFile", "weights.bin")
 
     return opts

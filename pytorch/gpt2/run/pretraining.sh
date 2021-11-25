@@ -8,8 +8,8 @@ time=$(date "+%Y%m%d%H%M%S")
 #    --model gpt2 \
 #    --optimizer LAMB \
 #    --layers-per-ipu 2 10 \
-#    --gradient-accumulation 1024 \
-#    --batches-per-step 8 \
+#    --gradient-accumulation 512 \
+#    --batches-per-step 4 \
 #    --batch-size 8 \
 #    --matmul-proportion 0.2 0.2 \
 #    --ipus-per-replica 2 \
@@ -25,18 +25,21 @@ time=$(date "+%Y%m%d%H%M%S")
 python train_gpt2.py \
     --model gpt2-medium \
     --optimizer LAMB \
+    --learning-rate 0.006 \
+    --lr-schedule 'linear' \
     --layers-per-ipu 1 7 8 8 \
     --matmul-proportion 0.2 0.15 0.15 0.15 \
     --ipus-per-replica 4 \
+    --replication-factor 4 \
     --gradient-accumulation 512 \
     --batches-per-step 8 \
     --batch-size 4 \
     --embedding-serialization-factor 6 \
-    --mlp-serialization-factor 1 \
     --recompute-checkpoint-every-layer True \
     --enable-half-partials True \
     --loss-scaling 50000 \
-    --train-path generated \
-    --compile-only \
+    --train-path 'data/wikicorpus_en_one_article_per_line.pkl' \
+    --use-wandb \
+    --epochs 3 \
     --save-model-path './checkpoints/gpt2_medium'
 

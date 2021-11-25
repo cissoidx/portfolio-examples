@@ -8,6 +8,8 @@ There is one example for GPT2 pre-training: `train_gpt2.py`
 
 First, install the Poplar SDK following the instructions in the Getting Started guide for your IPU system. Make sure to source the `enable.sh` scripts for Poplar and PopART.
 
+SDK version: 2.4.0-EA.1+808_poptorch
+
 Then, create a virtual environment, install the required packages and build the custom ops.
 
 ```console
@@ -24,21 +26,19 @@ Setup your environment as explained above and run the example with the configura
 ```console
 python train_gpt2.py \
     --model gpt2 \
-    --layers_per_ipu 2 10 \
-    --gradient_accumulation 1024 \
-    --batches_per_step 8 \
-    --batch_size 12 \
-    --matmul_proportion 0.2 0.2 \
-    --ipus_per_replica 2 \
-    --loss_scaling 50000 \
-    --enable_half_partials True \
-    --embedding_serialization_factor 4 \
-    --recompute_checkpoint_every_layer True \
-    --train_path generated \
-    --save_model_path './checkpoints/gpt2_small'
+    --optimizer AdamW \
+    --layers-per-ipu 2 10 \
+    --gradient-accumulation 512 \
+    --batches-per-step 4 \
+    --batch-size 8 \
+    --matmul-proportion 0.2 0.2 \
+    --ipus-per-replica 2 \
+    --enable-half-partials True \
+    --embedding-serialization-factor 6 \
+    --recompute-checkpoint-every-layer True \
+    --train-path generated \
+    --save-model-path './checkpoints/gpt2_small'
 ```
-
-
 
 ## Generate pretraining dataset (optional)
 
@@ -99,6 +99,7 @@ In other words you should probably not expect all of `AC`, `AD`, ... `ZX`, `ZY`,
 
 Use the `wikipedia_preprocess.py` script to preprocess and tokenize the extracted files and get the `.pkl` data.
 
+We generate a BPE tokenizer with vocab_size=30522.
 ```console
 python3 ./data/wikipedia_preprocess.py --input-file-path <chosen-folder-for-extracted-files> --output-file-path <chosen-folder-for-preprocessed-files>
 ```
