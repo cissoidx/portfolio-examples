@@ -148,13 +148,40 @@ or run by
 ```console
 bash run/pretraining.sh
 ```
-## Run the pre-training application of GPT2-medium by poprun on POD128/256
+## Run the pre-training application of GPT2-medium by poprun on POD128
 ```console
 bash run/poprun_pretraining_POD128.sh
 ```
-and
+
+## tfrecord data (optional)
+In order to use the multi-threaded `dataloader`, `tfrecord` files need to be generated.
 ```console
-bash run/poprun_pretraining_POD256.sh
+cd <chosen-folder-for-preprocessed-files>
+mkdir tfrecords
+python write_into_tfrecord.py
+
+cd tfrecords
+for f in *.tfrecord; do python3 -m tfrecord.tools.tfrecord2idx $f `basename $f .tfrecord`.index; done
+```
+and use the tfrecord datasets by
+```console
+python train_gpt2.py \
+    --model gpt2-medium \
+    --optimizer AdamW \
+    --lr-schedule 'linear' \
+    --layers-per-ipu 1 7 8 8 \
+    --matmul-proportion 0.2 0.15 0.15 0.15 \
+    --ipus-per-replica 4 \
+    --replication-factor 4 \
+    --gradient-accumulation 512 \
+    --batches-per-step 4 \
+    --batch-size 4 \
+    --embedding-serialization-factor 6 \
+    --recompute-checkpoint-every-layer True \
+    --enable-half-partials True \
+    --train-path 'tfrecord' \
+    --tfrecord-path data/tfrecords/*.tfrecord \
+    --save-model-path './checkpoints/gpt2_medium'
 ```
 
 

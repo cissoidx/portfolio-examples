@@ -228,10 +228,11 @@ if __name__ == "__main__":
                         drop_last=True,
                         auto_distributed_partitioning=not isinstance(train_dataset, torch.utils.data.IterableDataset),
                         mode=DataLoaderMode.AsyncRebatched if args.async_dataloader else DataLoaderMode.Sync)
-    steps_per_epoch = len(loader)
-    if steps_per_epoch < 1:
-        raise RuntimeError("Not enough data in input_files for current configuration, "
-                           "try reducing deviceIterations or gradientAccumulation.")
+    steps_per_epoch = len(train_dataset)
+    print(steps_per_epoch)
+    # if steps_per_epoch < 1:
+    #     raise RuntimeError("Not enough data in input_files for current configuration, "
+    #                        "try reducing deviceIterations or gradientAccumulation.")
     duration_loader = time.perf_counter() - start_loading
     logger(f"Data loaded in {duration_loader} secs")
     logger("-----------------------------------------------------------")
@@ -292,11 +293,11 @@ if __name__ == "__main__":
                            "Epoch": epoch,
                            "Throughput": step_throughput})
 
-    if args.save_model_path:
-        if not args.use_popdist or args.popdist_rank == 0:
-            model_path = os.path.join(args.save_model_path, 'model'.format(epoch + 1))
-            logger('saving current model to {}'.format(model_path))
-            if not os.path.exists(model_path):
-                os.makedirs(model_path, exist_ok=True)
-            model_to_save = model.model.module if hasattr(model, 'module') else model.model
-            model_to_save.save_pretrained(model_path)
+        if args.save_model_path:
+            if not args.use_popdist or args.popdist_rank == 0:
+                model_path = os.path.join(args.save_model_path, 'epoch_{}'.format(epoch + 1))
+                logger('saving current model to {}'.format(model_path))
+                if not os.path.exists(model_path):
+                    os.makedirs(model_path, exist_ok=True)
+                model_to_save = model.model.module if hasattr(model, 'module') else model.model
+                model_to_save.save_pretrained(model_path)

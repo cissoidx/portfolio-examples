@@ -53,7 +53,7 @@ def write_instance_to_example_files(train_path, output_dir, max_seq_length=128, 
     writers = []
     output_files = [os.path.join(output_dir, 'data_{}_.tfrecord'.format(i)) for i in range(num_output)]
     for output_file in output_files:
-        writers.append(tf.python_io.TFRecordWriter(output_file))
+        writers.append(tf.io.TFRecordWriter(output_file))
 
     with open(train_path, "rb") as f:
         input_list = pickle.load(f)
@@ -67,4 +67,4 @@ def create_int_feature(values):
   return feature
 
 if __name__ == "__main__":
-   write_instance_to_example_files(train_path='/localdata/xianw/gpt2/public_examples/applications/pytorch/gpt2/data/wikicorpus_en_one_article_per_line.pkl', output_dir='./tfrecords/') 
+   write_instance_to_example_files(train_path='wikicorpus_en_one_article_per_line.pkl', output_dir='./tfrecords/')
