@@ -77,6 +77,7 @@ def set_args():
 
     ## dataset
     parser.add_argument('--train-path', default='data/train.pkl', type=str, required=False, help='dataset path')
+    parser.add_argument('--tfrecord-path', nargs="+", help='tfrecord dataset path')
     parser.add_argument('--max-len', default=128, type=int, required=False, help='max length of input sequence')
     parser.add_argument('--stride', default=128, type=int, required=False, help='stride window size to sample dataset')
     parser.add_argument('--val-num', type=int, default=0, help='validate dataset length')
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     train_dataset, validate_dataset = load_dataset(logger, args)
     loader = DataLoader(opts,
                         train_dataset,
-                        shuffle=True,
+                        shuffle=False if 'tfrecord' in args.tfrecord_path[0] else True,
                         batch_size=args.batch_size,
                         num_workers=args.num_workers,
                         worker_init_fn=_WorkerInit(args.seed),
