@@ -24,20 +24,18 @@ time=$(date "+%Y%m%d%H%M%S")
 ## Pre-training gpt2-medium
 python train_gpt2.py \
     --model gpt2-medium \
-    --optimizer LAMB \
-    --learning-rate 0.006 \
+    --optimizer AdamW \
     --lr-schedule 'linear' \
     --layers-per-ipu 1 7 8 8 \
     --matmul-proportion 0.2 0.15 0.15 0.15 \
     --ipus-per-replica 4 \
     --replication-factor 4 \
     --gradient-accumulation 512 \
-    --batches-per-step 8 \
+    --batches-per-step 4 \
     --batch-size 4 \
     --embedding-serialization-factor 6 \
     --recompute-checkpoint-every-layer True \
     --enable-half-partials True \
-    --loss-scaling 50000 \
     --train-path 'data/wikicorpus_en_one_article_per_line.pkl' \
     --use-wandb \
     --epochs 3 \

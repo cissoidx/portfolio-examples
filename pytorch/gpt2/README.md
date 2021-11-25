@@ -108,41 +108,54 @@ python3 ./data/wikipedia_preprocess.py --input-file-path <chosen-folder-for-extr
 
 ```console
 python train_gpt2.py \
-    --model gpt2 \
-    --layers_per_ipu 2 10 \
-    --gradient_accumulation 1024 \
-    --batches_per_step 8 \
-    --batch_size 12 \
-    --matmul_proportion 0.2 0.2 \
-    --ipus_per_replica 2 \
-    --loss_scaling 50000 \
-    --enable_half_partials True \
-    --embedding_serialization_factor 4 \
-    --recompute_checkpoint_every_layer True \
-    --train_path <chosen-folder-for-preprocessed-files>/wikicorpus_en_one_article_per_line.pkl \
-    --save_model_path './checkpoints/gpt2_small'
+   --model gpt2 \
+   --optimizer AdamW \
+   --layers-per-ipu 2 10 \
+   --gradient-accumulation 512 \
+   --batches-per-step 4 \
+   --batch-size 8 \
+   --matmul-proportion 0.2 0.2 \
+   --ipus-per-replica 2 \
+   --enable-half-partials True \
+   --embedding-serialization-factor 6 \
+   --recompute-checkpoint-every-layer True \
+   --train-path <chosen-folder-for-preprocessed-files>/wikicorpus_en_one_article_per_line.pkl \
+   --save-model-path './checkpoints/gpt2_small'
 ```
 
-## Run the pre-training application of GPT2-medium
+## Run the pre-training application of GPT2-medium on POD16
 
 ```console
 python train_gpt2.py \
     --model gpt2-medium \
-    --layers_per_ipu 1 7 8 8 \
-    --matmul_proportion 0.2 0.15 0.15 0.15 \
-    --ipus_per_replica 4 \
-    --gradient_accumulation 1024 \
-    --batches_per_step 8 \
-    --batch_size 8 \
-    --embedding_serialization_factor 4 \
-    --mlp_serialization_factor 1 \
-    --recompute_checkpoint_every_layer True \
-    --enable_half_partials True \
-    --loss_scaling 50000 \
-    --train_path <chosen-folder-for-preprocessed-files>/wikicorpus_en_one_article_per_line.pkl \
-    --save_model_path './checkpoints/gpt2_medium'
+    --optimizer AdamW \
+    --lr-schedule 'linear' \
+    --layers-per-ipu 1 7 8 8 \
+    --matmul-proportion 0.2 0.15 0.15 0.15 \
+    --ipus-per-replica 4 \
+    --replication-factor 4 \
+    --gradient-accumulation 512 \
+    --batches-per-step 4 \
+    --batch-size 4 \
+    --embedding-serialization-factor 6 \
+    --recompute-checkpoint-every-layer True \
+    --enable-half-partials True \
+    --train-path <chosen-folder-for-preprocessed-files>/wikicorpus_en_one_article_per_line.pkl \
+    --epochs 3 \
+    --save-model-path './checkpoints/gpt2_medium'
 ```
-
+or run by
+```console
+bash run/pretraining.sh
+```
+## Run the pre-training application of GPT2-medium by poprun on POD128/256
+```console
+bash run/poprun_pretraining_POD128.sh
+```
+and
+```console
+bash run/poprun_pretraining_POD256.sh
+```
 
 
 ## Licensing

@@ -5,9 +5,9 @@
     "GPT2LMHeadModel"
   ],
   "attn_pdrop": 0.1,
-  "bos_token_id": 21128,
+  "bos_token_id": 30522,
   "embd_pdrop": 0.1,
-  "eos_token_id": 21128,
+  "eos_token_id": 30522,
   "gradient_checkpointing": false,
   "initializer_range": 0.02,
   "layer_norm_epsilon": 1e-05,
@@ -34,5 +34,5 @@
   "tokenizer_class": "BertTokenizer",
   "transformers_version": "4.2.0",
   "use_cache": true,
-  "vocab_size": 21128
+  "vocab_size": 30522
 }

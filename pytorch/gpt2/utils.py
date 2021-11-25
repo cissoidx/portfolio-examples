@@ -80,7 +80,7 @@ def load_dataset(logger, args):
                 if start_point < len(article):
                     samples.append(article[len(article) - args.max_len:])
             random.shuffle(samples)
-
+            input_list.clear()
             # split train and valid dataset
             val_num = args.val_num
             input_list_train = samples[val_num:]
