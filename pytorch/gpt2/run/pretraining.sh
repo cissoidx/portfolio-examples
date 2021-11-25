@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) 2021 Graphcore Ltd. All rights reserved.
 time=$(date "+%Y%m%d%H%M%S")
 
 #export POPLAR_ENGINE_OPTIONS='{"profiler.includeFlopEstimates": "true","autoReport.all":"true","debug.allowOutOfMemory": "true", "autoReport.executionProfileProgramRunCount":"1", "autoReport.directory":"./logs/small_mlp_bs16"}'
