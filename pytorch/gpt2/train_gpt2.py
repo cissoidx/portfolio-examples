@@ -148,11 +148,16 @@ class GTP2Wrapper(nn.Module):
 
         if args.pretrained_model:  # load pretrained model
             sel.model = GPT2LMHeadModel.from_pretrained(args.pretrained_model)
-        else:  # init model
+        
+        elif MODEL_CONFIG.get(args.model):
             model_config = MODEL_CONFIG[args.model]
             self.config = GPT2Config.from_json_file(model_config)
             self.model = GPT2LMHeadModel(config=self.config)
-
+        
+        else:
+            self.config = args
+            self.model = GPT2LMHeadModel(config=args)
+        
         for layer in self.model.transformer.h:
             GPT2Attn = OptimizedGPT2Attention(self.model.config)
             GPT2Attn.load_state_dict(layer.attn.state_dict())

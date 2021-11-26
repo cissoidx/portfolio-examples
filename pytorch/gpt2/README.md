@@ -150,6 +150,10 @@ bash run/poprun_pretraining_POD128.sh
 The model has not converge to SOTA, and we are still working on this.
 The newest results will be updated once we got it.
 
+## Run the tests (optional)
+
+Setup your environment and generate the sample dataset as explained above and run `python3 -m pytest` from the root folder.
+
 ## tfrecord data (faster)
 In order to use the multi-threaded `dataloader`, `tfrecord` files need to be generated.
 ```console
