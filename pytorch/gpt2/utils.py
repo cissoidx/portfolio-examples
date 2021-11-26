@@ -157,7 +157,7 @@ def load_dataset(logger, args):
                           size=(num_instances * args.replication_factor * args.ipus_per_replica * args.batches_per_step * args.batch_size * args.gradient_accumulation, args.max_len))
         train_dataset = MyDataset(generated, args.max_len)
         val_dataset = MyDataset(generated, args.max_len)
-    elif 'tfrecord' in args.tfrecord_path[0]:
+    elif 'tfrecord' in args.train_path:
         train_dataset = TFRecordPretrainingDataset(args.tfrecord_path[:-1])
         val_dataset = TFRecordPretrainingDataset(args.tfrecord_path[-1:])
     else:
@@ -174,7 +174,7 @@ def load_dataset(logger, args):
                 if start_point < len(article):
                     samples.append(article[len(article) - args.max_len:])
             random.shuffle(samples)
-            input_list.clear()
+
             # split train and valid dataset
             val_num = args.val_num
             input_list_train = samples[val_num:]

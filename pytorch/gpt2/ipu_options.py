@@ -55,7 +55,7 @@ def get_options(config):
     opts.deviceIterations(config.batches_per_step)
     opts.Training.gradientAccumulation(config.gradient_accumulation)
     opts.Training.accumulationAndReplicationReductionType(poptorch.ReductionType.Mean)
-    opts.outputMode(poptorch.OutputMode.Sum)
+    opts.anchorMode(poptorch.AnchorMode.Sum)
     opts.TensorLocations.setOptimizerLocation(
         poptorch.TensorLocationSettings()
         .useOnChipStorage(not config.optimizer_state_offchip)

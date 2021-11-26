@@ -220,7 +220,7 @@ if __name__ == "__main__":
     train_dataset, validate_dataset = load_dataset(logger, args)
     loader = DataLoader(opts,
                         train_dataset,
-                        shuffle=False if 'tfrecord' in args.tfrecord_path[0] else True,
+                        shuffle=False if 'tfrecord' in args.train_path else True,
                         batch_size=args.batch_size,
                         num_workers=args.num_workers,
                         worker_init_fn=_WorkerInit(args.seed),
