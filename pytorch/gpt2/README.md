@@ -129,7 +129,6 @@ python train_gpt2.py \
 python train_gpt2.py \
     --model gpt2-medium \
     --optimizer AdamW \
-    --lr-schedule 'linear' \
     --layers-per-ipu 1 7 8 8 \
     --matmul-proportion 0.2 0.15 0.15 0.15 \
     --ipus-per-replica 4 \
@@ -144,16 +143,14 @@ python train_gpt2.py \
     --epochs 3 \
     --save-model-path './checkpoints/gpt2_medium'
 ```
-or run by
-```console
-bash run/pretraining.sh
-```
 ## Run the pre-training application of GPT2-medium by poprun on POD128
 ```console
 bash run/poprun_pretraining_POD128.sh
 ```
+The model has not converge to SOTA, and we are still working on this.
+The newest results will be updated once we got it.
 
-## tfrecord data (optional)
+## tfrecord data (faster)
 In order to use the multi-threaded `dataloader`, `tfrecord` files need to be generated.
 ```console
 cd <chosen-folder-for-preprocessed-files>
@@ -168,7 +165,6 @@ and use the tfrecord datasets by
 python train_gpt2.py \
     --model gpt2-medium \
     --optimizer AdamW \
-    --lr-schedule 'linear' \
     --layers-per-ipu 1 7 8 8 \
     --matmul-proportion 0.2 0.15 0.15 0.15 \
     --ipus-per-replica 4 \

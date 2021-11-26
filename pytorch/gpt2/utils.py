@@ -158,7 +158,7 @@ def load_dataset(logger, args):
         train_dataset = MyDataset(generated, args.max_len)
         val_dataset = MyDataset(generated, args.max_len)
     elif 'tfrecord' in args.train_path:
-        train_dataset = TFRecordPretrainingDataset(args.tfrecord_path[:-1])
+        train_dataset = TFRecordPretrainingDataset(args.tfrecord_path[:])
         val_dataset = TFRecordPretrainingDataset(args.tfrecord_path[-1:])
     else:
         try:
