@@ -1,7 +1,4 @@
 #!/bin/bash
-time=$(date "+%Y%m%d%H%M%S")
-
-#export POPLAR_ENGINE_OPTIONS='{"profiler.includeFlopEstimates": "true","autoReport.all":"true","debug.allowOutOfMemory": "true", "autoReport.executionProfileProgramRunCount":"1", "autoReport.directory":"./logs/small_mlp_bs16"}'
 
 ## Pre-training gpt2-medium
 python train_gpt2.py \

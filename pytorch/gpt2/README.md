@@ -8,7 +8,7 @@ There is one example for GPT2 pre-training: `train_gpt2.py`
 
 First, install the Poplar SDK following the instructions in the Getting Started guide for your IPU system. Make sure to source the `enable.sh` scripts for Poplar and PopART.
 
-SDK version: 2.3.0+774_poptorch
+SDK version: 2.3 
 
 Then, create a virtual environment, install the required packages and build the custom ops.
 
@@ -147,8 +147,7 @@ python train_gpt2.py \
 ```console
 bash run/poprun_pretraining_POD128.sh
 ```
-The model has not converge to SOTA, and we are still working on this.
-The newest results will be updated once we got it.
+This model is under active development, and details on performance and convergence will be added soon.
 
 ## Run the tests (optional)
 
