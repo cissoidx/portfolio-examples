@@ -18,6 +18,7 @@ import torch
 import torch.nn as nn
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
+
 class OptimizedGPT2Attention(GPT2Attention):
     def optimized_attn(self, query, key, value, attention_mask=None, head_mask=None):
         attn_weights = torch.matmul(query, key.transpose(-1, -2))
@@ -55,15 +56,15 @@ class OptimizedGPT2Attention(GPT2Attention):
         return attn_output, attn_weights
 
     def forward(
-        self,
-        hidden_states,
-        layer_past=None,
-        attention_mask=None,
-        head_mask=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        use_cache=False,
-        output_attentions=False,
+            self,
+            hidden_states,
+            layer_past=None,
+            attention_mask=None,
+            head_mask=None,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            use_cache=False,
+            output_attentions=False,
     ):
         if encoder_hidden_states is not None:
             if not hasattr(self, "q_attn"):
@@ -107,5 +108,3 @@ class OptimizedGPT2Attention(GPT2Attention):
             outputs += (attn_weights,)
 
         return outputs  # a, present, (attentions)
-
-

@@ -23,6 +23,7 @@ import os
 
 from utils import logger
 
+
 def get_options(config):
     '''
     Set ipu specific options for the model, see documentation:
@@ -57,9 +58,9 @@ def get_options(config):
     opts.Training.accumulationAndReplicationReductionType(poptorch.ReductionType.Mean)
     opts.anchorMode(poptorch.AnchorMode.Sum)
     opts.TensorLocations.setOptimizerLocation(
-        poptorch.TensorLocationSettings()
-        .useOnChipStorage(not config.optimizer_state_offchip)
-        .useReplicatedTensorSharding(config.replicated_tensor_sharding))
+                                             poptorch.TensorLocationSettings()
+                                             .useOnChipStorage(not config.optimizer_state_offchip)
+                                             .useReplicatedTensorSharding(config.replicated_tensor_sharding))
     opts.randomSeed(config.seed)
     opts.setExecutionStrategy(
         poptorch.PipelinedExecution(poptorch.AutoStage.AutoIncrement))

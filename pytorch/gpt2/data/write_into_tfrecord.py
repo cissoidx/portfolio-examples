@@ -13,13 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
 import random
 import collections
 import os
 import pdb
 import pickle
 from tqdm import tqdm
+
+try:
+    import tensorflow as tf
+except ImportError:
+    raise ImportError("Tensorflow is required to generate data for this application. "
+                      "Please install with: 'pip install tensorflow==1.15.0'")
+
 
 def write_instance_to_example_files(train_path, output_dir, max_seq_length=128, stride=128, num_output=10):
     """Create TF example files from `TrainingInstance`s."""
@@ -43,7 +49,7 @@ def write_instance_to_example_files(train_path, output_dir, max_seq_length=128, 
                 tf_example = tf.train.Example(features=tf.train.Features(feature=features))
                 writers[writer_index].write(tf_example.SerializeToString())
                 if total_written % 100 == 0:
-                    #update writer_index
+                    # update writer_index
                     writer_index = (writer_index + 1) % len(writers)
                 total_written += 1
         for writer in writers:
@@ -57,14 +63,15 @@ def write_instance_to_example_files(train_path, output_dir, max_seq_length=128, 
 
     with open(train_path, "rb") as f:
         input_list = pickle.load(f)
-    
+
     total_written = to_tfrecord(input_list, writers)
     tf.compat.v1.logging.info("Wrote %d total instances", total_written)
 
 
 def create_int_feature(values):
-  feature = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
-  return feature
+    feature = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
+    return feature
+
 
 if __name__ == "__main__":
-   write_instance_to_example_files(train_path='wikicorpus_en_one_article_per_line.pkl', output_dir='./tfrecords/')
+    write_instance_to_example_files(train_path='wikicorpus_en_one_article_per_line.pkl', output_dir='./tfrecords/')

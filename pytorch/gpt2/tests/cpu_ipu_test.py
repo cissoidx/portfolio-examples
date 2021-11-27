@@ -16,24 +16,21 @@ import torch
 import poptorch
 import pytest
 import numpy as np
+import torch.nn as nn
 from transformers import BertTokenizer, BertTokenizerFast, GPT2Config, GPT2LMHeadModel
 import warnings
+from train_gpt2 import GTP2Wrapper, set_args
 
 warnings.filterwarnings("ignore", category=torch.jit.TracerWarning)
 
 
-class GTP2Wrapper(torch.nn.Module):
-    # Required because poptorch does not support defaults args in the model.
-    def __init__(self, model):
+class cpu_wrapper(nn.Module):
+    def __init__(self, config):
         super().__init__()
-        self.model = model
+        self.model = GPT2LMHeadModel(config=config)
 
-    def forward(self, context, past_key_values, labels):
-        outputs = self.model.forward(context, past_key_values=past_key_values, labels=labels)
-        logits = outputs.logits
-        loss = outputs.loss
-        # loss = poptorch.identity_loss(loss.mean(), reduction="none")
-        return loss.mean()
+    def forward(self, input_ids, labels):
+        return self.model.forward(input_ids=input_ids, labels=labels)
 
 
 def test_ipu_cpu_match():
@@ -43,8 +40,17 @@ def test_ipu_cpu_match():
     """
 
     # Config
-    batch_size = 1
+    args = set_args()
+    args.batch_size = 1
+    args.pretrained_model = None
+    args.mlp_serialization_factor = 1
+    args.embedding_serialization_factor = 2
+    args.layers_per_ipu = [3]
+    args.recompute_checkpoint_every_layer = True
+
+    batch_size = args.batch_size
     config = GPT2Config.from_json_file('config/config.json')
+    config.model = 'gpt2_test'
     config.attn_pdrop = 0.0
     config.embd_pdrop = 0.0
     config.resid_pdrop = 0.0
@@ -60,10 +66,9 @@ def test_ipu_cpu_match():
     opts.Precision.setPartialsType(torch.float32)
     opts.anchorMode(poptorch.AnchorMode.Final)
 
-    model_cpu = GPT2LMHeadModel(config=config).train()
-    model_ipu_ = GPT2LMHeadModel(config=config).train()
-    model_ipu_.load_state_dict(model_cpu.state_dict())
-    model_ipu = GTP2Wrapper(model_ipu_)
+    model_cpu = cpu_wrapper(config=config).train()
+    model_ipu = GTP2Wrapper(args, config).train()
+    model_ipu.load_state_dict(model_cpu.state_dict())
 
     # Check that copy was successful
     assert model_ipu is not model_cpu
@@ -90,20 +95,11 @@ def test_ipu_cpu_match():
                        for _ in range(config.n_layer)]
 
     batch_cpu = (inputs['input_ids'].repeat(batch_size, 1),
-                 past_key_values,
-                 None,
-                 None,
-                 None,
-                 None,
-                 None,
-                 None,
-                 None,
                  labels.repeat(batch_size, 1))
 
-    batch = (inputs['input_ids'].repeat(1, 1),
-             past_key_values,
-             labels.repeat(1, 1))
-
+    _label = batch_cpu[1][:, 1:]
+    batch_ipu = (batch_cpu[0],
+                 torch.cat((_label, -100 * torch.ones((_label.size(0), 1), dtype=torch.long)), dim=1))
     # Training Loop
     for step in range(10):
         # Step CPU model
@@ -115,14 +111,10 @@ def test_ipu_cpu_match():
         optimizer_cpu.step()
 
         # Step IPU Model
-        ipu_output = poptorch_model(*batch)
-        ipu_loss = ipu_output
+        ipu_output = poptorch_model(*batch_ipu)
+        ipu_loss = ipu_output[0]
 
         with torch.no_grad():
             print(f"CPU Loss: {cpu_loss}, IPU Loss: {ipu_loss}")
             # Check the losses are approximately equal
-            assert np.allclose(cpu_loss.numpy(), ipu_loss.numpy(), atol=1e-6)
-
-
-if __name__ == '__main__':
-    test_ipu_cpu_match()
+            assert np.allclose(cpu_loss.numpy(), ipu_loss.numpy(), rtol=1e-4)

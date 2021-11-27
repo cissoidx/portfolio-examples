@@ -32,7 +32,9 @@ from torch.utils.data import IterableDataset
 import glob
 import multiprocessing
 from tfrecord.reader import tfrecord_loader
-TFRECORD_KEYS = ['input_ids']           # Torch Model Keys
+
+TFRECORD_KEYS = ['input_ids']  # Torch Model Keys
+
 
 def str_to_bool(value):
     if isinstance(value, bool) or value is None:
@@ -42,6 +44,7 @@ def str_to_bool(value):
     elif value.lower() in {'true', 't', '1', 'yes', 'y'}:
         return True
     raise argparse.ArgumentTypeError(f'{value} is not a valid boolean value')
+
 
 def expand_glob_files(files):
     result = []
@@ -71,6 +74,7 @@ class TFRecordPretrainingDataset(IterableDataset):
     files: List of TFRecord files containing the preprocessed pretraining data
     shuffle: Shuffle the data?
     """
+
     def __init__(self,
                  input_files,
                  shuffle=True):
@@ -144,6 +148,7 @@ class MyDataset(Dataset):
     def __len__(self):
         return len(self.input_list)
 
+
 def load_dataset(logger, args):
     """
     load train and valid dataset
@@ -154,7 +159,9 @@ def load_dataset(logger, args):
     if train_path == 'generated':
         num_instances = args.popdist_size if args.use_popdist else 1
         generated = np.random.randint(low=1, high=args.vocab_size,
-                          size=(num_instances * args.replication_factor * args.ipus_per_replica * args.batches_per_step * args.batch_size * args.gradient_accumulation, args.max_len))
+                                      size=(num_instances * args.replication_factor * args.ipus_per_replica *
+                                            args.batches_per_step * args.batch_size * args.gradient_accumulation,
+                                            args.max_len))
         train_dataset = MyDataset(generated, args.max_len)
         val_dataset = MyDataset(generated, args.max_len)
     elif 'tfrecord' in args.train_path:
@@ -187,6 +194,7 @@ def load_dataset(logger, args):
 
     return train_dataset, val_dataset
 
+
 class GeneratedPretrainingDataset(Dataset):
     def __init__(self, vocab_size, sequence_length, seed=42):
         self.vocab_size = vocab_size
@@ -198,8 +206,8 @@ class GeneratedPretrainingDataset(Dataset):
         with torch.random.fork_rng():
             torch.manual_seed(self.seed)
             input_ids = torch.randint(0, self.vocab_size,
-                                   [self.sequence_length],
-                                   dtype=torch.long)
+                                      [self.sequence_length],
+                                      dtype=torch.long)
             label = input_ids
 
         return input_ids, label
@@ -210,8 +218,10 @@ class GeneratedPretrainingDataset(Dataset):
     def __getitem__(self, __):
         return self.data
 
+
 def get_generated_datum(config):
-    samples_per_step = config.replication_factor * config.gradient_accumulation * config.batch_size * config.batches_per_step
+    samples_per_step = config.replication_factor * config.gradient_accumulation * config.batch_size * \
+                       config.batches_per_step
     result = []
     dataset = GeneratedPretrainingDataset(config.vocab_size,
                                           config.max_len)
@@ -226,10 +236,12 @@ def calculate_acc(logit, labels, ignore_index=-100):
     non_pad_mask = mask.sum(-1).unsqueeze(-1)
     return (logit.argmax(dim=-1) == labels).float().mul(mask).div(non_pad_mask).sum(-1).mean()
 
+
 def collate_fn(batch):
     input_ids = rnn_utils.pad_sequence(batch, batch_first=True, padding_value=0)
     labels = rnn_utils.pad_sequence(batch, batch_first=True, padding_value=-100)
     return input_ids, labels
+
 
 class _WorkerInit:
     def __init__(self, seed):
@@ -238,9 +250,11 @@ class _WorkerInit:
     def __call__(self, worker_id):
         np.random.seed((self.seed + worker_id) % np.iinfo(np.uint32).max)
 
+
 def logger(msg):
     if not popdist.isPopdistEnvSet() or popdist.getInstanceIndex() == 0:
         logging.info(msg)
+
 
 def cycle(iterator):
     """
@@ -249,6 +263,7 @@ def cycle(iterator):
     while True:
         for item in iterator:
             yield item
+
 
 def get_lr_scheduler(optimizer,
                      scheduler_type,
@@ -268,8 +283,8 @@ def get_lr_scheduler(optimizer,
     return scheduler
 
 
-def get_optimizer(optimizer, weight_decay, learning_rate, loss_scaling,  model, use_popdist=False, enable_half_first_order_momentum=True):
-
+def get_optimizer(optimizer, weight_decay, learning_rate, loss_scaling, model, use_popdist=False,
+                  enable_half_first_order_momentum=True):
     # Do not apply weight_decay for one-dimensional parameters
     regularized_params = []
     non_regularized_params = []
@@ -328,6 +343,7 @@ def get_optimizer(optimizer, weight_decay, learning_rate, loss_scaling,  model, 
 
     return optimizer
 
+
 def sync_metrics(outputs, factor=1, average=True):
     if popdist.isPopdistEnvSet():
         if isinstance(outputs, float):
@@ -339,6 +355,7 @@ def sync_metrics(outputs, factor=1, average=True):
             return outputs
         else:
             return [output.div(factor).mean().item() for output in outputs]
+
 
 def outline_attribute(module: nn.Module, value: str):
     """Adds an attribute to a module. This attribute will be used
@@ -362,8 +379,10 @@ def outline_attribute(module: nn.Module, value: str):
 
     def disable(*args):
         context.__exit__(None, None, None)
+
     module.register_forward_pre_hook(enable)
     module.register_forward_hook(disable)
+
 
 def _get_layer_ipu(layers_per_ipu):
     # List of the IPU Id for each encoder layer
@@ -372,12 +391,16 @@ def _get_layer_ipu(layers_per_ipu):
         layer_ipu += [ipu] * n_layers
     return layer_ipu
 
+
 def recomputation_checkpoint(module: nn.Module):
     """Annotates the output of a module to be checkpointed instead of
         recomputed"""
+
     def recompute_outputs(module, inputs, outputs):
         return tuple(poptorch.recomputationCheckpoint(y) for y in outputs)
+
     module.register_forward_hook(recompute_outputs)
+
 
 class SerializedLinear(nn.Linear):
     def __init__(self, in_features, out_features, factor, bias=False,
@@ -393,6 +416,7 @@ class SerializedLinear(nn.Linear):
             output += self.bias
         return output.view(*size_out)
 
+
 class SerializedEmbedding(nn.Module):
     """
     Wrapper for `nn.Embedding` layer that performs the embedding look-up into
@@ -403,6 +427,7 @@ class SerializedEmbedding(nn.Module):
         embedding: A `nn.Embedding` to wrap
         serialization_factor: The number of serialized embedding look-ups
     """
+
     def __init__(self, embedding: nn.Embedding, serialization_factor: int):
         super().__init__()
         self.serialization_factor = serialization_factor
@@ -412,7 +437,7 @@ class SerializedEmbedding(nn.Module):
         assert self.num_embeddings % self.serialization_factor == 0
         self.split_size = self.num_embeddings // self.serialization_factor
         self.split_embeddings = nn.ModuleList(
-            [nn.Embedding.from_pretrained(embedding.weight[i*self.split_size:(i+1)*self.split_size, :].detach(),
+            [nn.Embedding.from_pretrained(embedding.weight[i * self.split_size:(i + 1) * self.split_size, :].detach(),
                                           freeze=False,
                                           padding_idx=embedding.padding_idx if i == 0 else None)
              for i in range(self.serialization_factor)])

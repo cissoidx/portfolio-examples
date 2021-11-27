@@ -35,7 +35,7 @@ bool has_priorites_set(popart::Op *op) {
 }
 }
 
-// This Pattern find the residual adds in Bert and encorages PopART
+// This Pattern find the residual adds in GPT2 and encorages PopART
 // to inplace on the output created by group_norm.
 // This is beneficial as the Tensor layout of LHS in the first residual tensor
 // comes from the embedding output which is less memory balanced.

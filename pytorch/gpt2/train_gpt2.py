@@ -33,7 +33,8 @@ from datetime import datetime
 from tqdm import trange, tqdm
 import pickle
 from utils import load_dataset, _WorkerInit, get_lr_scheduler, get_optimizer, collate_fn, sync_metrics, \
-    str_to_bool, outline_attribute, _get_layer_ipu, recomputation_checkpoint, SerializedLinear, calculate_acc, get_generated_datum
+    str_to_bool, outline_attribute, _get_layer_ipu, recomputation_checkpoint, SerializedLinear, calculate_acc, \
+    get_generated_datum
 from ipu_options import get_options
 from poptorch import DataLoader
 from poptorch.enums import DataLoaderMode
@@ -61,7 +62,7 @@ def set_args():
     """
     parser = argparse.ArgumentParser()
 
-    ## model
+    # model
     parser.add_argument('--model', type=str, default='gpt2', choices=('gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl'),
                         help='model to train')
     parser.add_argument("--enable-half-partials", type=str_to_bool, nargs="?", const=True, default=False,
@@ -75,7 +76,7 @@ def set_args():
     parser.add_argument("--compile-only", type=str_to_bool, nargs="?", const=True, default=False,
                         help="Create an offline IPU target that can only be used for offline compilation.")
 
-    ## dataset
+    # dataset
     parser.add_argument('--train-path', default='data/train.pkl', type=str, required=False, help='dataset path')
     parser.add_argument('--tfrecord-path', nargs="+", help='tfrecord dataset path')
     parser.add_argument('--max-len', default=128, type=int, required=False, help='max length of input sequence')
@@ -87,7 +88,7 @@ def set_args():
                         help="async dataloader")
     parser.add_argument('--vocab-size', type=int, default=30522, help="vocab size if generate mock data")
 
-    ## train
+    # train
     parser.add_argument('--epochs', default=1, type=int, required=False, help='epochs for training')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size (default = 1)')
     parser.add_argument('--optimizer', default='AdamW', type=str, required=False, help='optimizer')
@@ -104,14 +105,15 @@ def set_args():
                         help="Enable replicated tensor sharding of optimizer state")
     parser.add_argument("--use-wandb", type=str_to_bool, nargs="?", const=True, default=False, help="use wandb or not")
 
-    ## mapping
+    # mapping
     parser.add_argument('--layers-per-ipu', type=int, default=3, nargs="+",
                         help='Number of decoder layers per pipeline stage, after the 0th stage (default = 3). Can be a single number, for an equal number decoder layers per IPU.\
                                 Or it can be a list of numbers, specifying number of decoder layers for each individual IPU.')
     parser.add_argument('--batches-per-step', default=4, type=int, required=False, help='batches_per_step')
     parser.add_argument('--replication-factor', default=1, type=int, required=False, help='replication_factor')
     parser.add_argument('--ipus-per-replica', default=4, type=int, required=False, help='ipus_per_replica')
-    parser.add_argument("--matmul-proportion", type=float, nargs="+",help="Relative IPU memory proportion size allocated for matmul")
+    parser.add_argument("--matmul-proportion", type=float, nargs="+",
+                        help="Relative IPU memory proportion size allocated for matmul")
     parser.add_argument("--custom-ops", type=str_to_bool, nargs="?", const=True, default=True, help="Enable custom ops")
     parser.add_argument("--recompute-checkpoint-every-layer", type=str_to_bool, nargs="?", const=True, default=False,
                         help="This controls how recomputation is handled in pipelining. "
@@ -119,7 +121,8 @@ def set_args():
                              "of activations to be at most one layer. "
                              "However, the stash size scales with the number of pipeline stages so this may not always be beneficial. "
                              "The added stash + code could be greater than the reduction in temporary memory.", )
-    parser.add_argument("--embedding-serialization-factor", default=1, type=int, help="Matmul serialization factor the embedding layers")
+    parser.add_argument("--embedding-serialization-factor", default=1, type=int,
+                        help="Matmul serialization factor the embedding layers")
     parser.add_argument("--mlp-serialization-factor", default=1, type=int,
                         help="Matmul serialization factor the mlp layers")
 
@@ -143,14 +146,13 @@ def set_args():
 
 
 class GTP2Wrapper(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, model_config):
         super().__init__()
 
         if args.pretrained_model:  # load pretrained model
-            sel.model = GPT2LMHeadModel.from_pretrained(args.pretrained_model)
+            self.model = GPT2LMHeadModel.from_pretrained(args.pretrained_model)
         else:  # init model
-            model_config = MODEL_CONFIG[args.model]
-            self.config = GPT2Config.from_json_file(model_config)
+            self.config = model_config
             self.model = GPT2LMHeadModel(config=self.config)
 
         for layer in self.model.transformer.h:
@@ -161,7 +163,6 @@ class GTP2Wrapper(nn.Module):
             if args.mlp_serialization_factor > 1:
                 GPT2MLP = OptimizedGPT2MLP(self.model.config, args.mlp_serialization_factor)
                 layer.mlp = GPT2MLP
-
 
         if args.embedding_serialization_factor > 1:
             serialized_lmhead = SerializedLinear(self.config.n_embd, self.config.vocab_size,
@@ -209,8 +210,8 @@ if __name__ == "__main__":
     # W&B
     if args.use_wandb and (not args.use_popdist or args.popdist_rank == 0):
         wandb.init(project="torch-gpt2", settings=wandb.Settings(console="wrap"),
-                   name='model-' + str(args.model) + ' ipus-' + \
-                        str(args.ipus_per_replica) + ' bs-' + str(args.batch_size))
+                   name='model-' + str(args.model) + ' ipus-' + str(args.ipus_per_replica) + ' bs-' + str(
+                       args.batch_size))
         wandb_config = vars(args)
         wandb.config.update(wandb_config)
 
@@ -228,16 +229,16 @@ if __name__ == "__main__":
                         drop_last=True,
                         auto_distributed_partitioning=not isinstance(train_dataset, torch.utils.data.IterableDataset),
                         mode=DataLoaderMode.AsyncRebatched if args.async_dataloader else DataLoaderMode.Sync)
-    steps_per_epoch = len(train_dataset)
-    print(steps_per_epoch)
-    # if steps_per_epoch < 1:
-    #     raise RuntimeError("Not enough data in input_files for current configuration, "
-    #                        "try reducing deviceIterations or gradientAccumulation.")
+    steps_per_epoch = len(loader)
+    if steps_per_epoch < 1:
+        raise RuntimeError("Not enough data in input_files for current configuration, "
+                           "try reducing deviceIterations or gradientAccumulation.")
     duration_loader = time.perf_counter() - start_loading
     logger(f"Data loaded in {duration_loader} secs")
     logger("-----------------------------------------------------------")
 
-    model = GTP2Wrapper(args).half().train()
+    model_config = GPT2Config.from_json_file(MODEL_CONFIG[args.model])
+    model = GTP2Wrapper(args, model_config).half().train()
 
     optimizer = get_optimizer(args.optimizer, args.weight_decay, args.learning_rate, args.loss_scaling, model,
                               use_popdist=args.use_popdist)
@@ -277,8 +278,7 @@ if __name__ == "__main__":
             step_length = sync_metrics(time.perf_counter() - start_step)
             outputs_sync = sync_metrics(outputs, factor)
             num_instances = args.popdist_size if args.use_popdist else 1
-            step_throughput = num_instances * args.replication_factor * args.batch_size * args.gradient_accumulation * \
-                              args.batches_per_step / step_length
+            step_throughput = num_instances * args.replication_factor * args.batch_size * args.gradient_accumulation * args.batches_per_step / step_length
             if (batch_idx + 1) % args.log_steps == 0:
                 logger("batch {} of epoch {}, loss: {}, acc: {}, lr: {}, Throughput: {} seq/s".format(
                     batch_idx + 1, epoch + 1, outputs_sync[0], outputs_sync[1], scheduler.get_last_lr()[0],

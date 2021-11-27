@@ -8,7 +8,7 @@ There is one example for GPT2 pre-training: `train_gpt2.py`
 
 First, install the Poplar SDK following the instructions in the Getting Started guide for your IPU system. Make sure to source the `enable.sh` scripts for Poplar and PopART.
 
-SDK version: 2.4.0-EA.1+808_poptorch
+SDK version: 2.3.0+774_poptorch
 
 Then, create a virtual environment, install the required packages and build the custom ops.
 
@@ -99,7 +99,7 @@ In other words you should probably not expect all of `AC`, `AD`, ... `ZX`, `ZY`,
 
 Use the `wikipedia_preprocess.py` script to preprocess and tokenize the extracted files and get the `.pkl` data.
 
-We generate a BPE tokenizer with vocab_size=30522.
+We generate a BPE tokenizer with **vocab_size=30522**.
 ```console
 python3 ./data/wikipedia_preprocess.py --input-file-path <chosen-folder-for-extracted-files> --output-file-path <chosen-folder-for-preprocessed-files>
 ```
@@ -150,6 +150,10 @@ bash run/poprun_pretraining_POD128.sh
 The model has not converge to SOTA, and we are still working on this.
 The newest results will be updated once we got it.
 
+## Run the tests (optional)
+
+Setup your environment and generate the sample dataset as explained above and run `python3 -m pytest` from the root folder.
+
 ## tfrecord data (faster)
 In order to use the multi-threaded `dataloader`, `tfrecord` files need to be generated.
 ```console
@@ -164,19 +168,22 @@ and use the tfrecord datasets by
 ```console
 python train_gpt2.py \
     --model gpt2-medium \
-    --optimizer AdamW \
+    --optimizer LAMB \
+    --learning-rate 0.006 \
+    --lr-schedule linear \
     --layers-per-ipu 1 7 8 8 \
     --matmul-proportion 0.2 0.15 0.15 0.15 \
     --ipus-per-replica 4 \
-    --replication-factor 4 \
-    --gradient-accumulation 512 \
-    --batches-per-step 4 \
+    --replication-factor 1 \
+    --gradient-accumulation 1024 \
+    --batches-per-step 8 \
     --batch-size 4 \
     --embedding-serialization-factor 6 \
     --recompute-checkpoint-every-layer True \
     --enable-half-partials True \
     --train-path 'tfrecord' \
-    --tfrecord-path data/tfrecords/*.tfrecord \
+    --tfrecord-path ./data/tfrecords/*.tfrecord \
+    --epochs 3 \
     --save-model-path './checkpoints/gpt2_medium'
 ```
 

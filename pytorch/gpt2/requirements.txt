@@ -5,4 +5,4 @@ scipy>=1.5.4
 wandb==0.12.1
 horovod>=0.22.0 --no-binary=horovod
 tfrecord>=1.13
-tensorflow==1.15.0
+
