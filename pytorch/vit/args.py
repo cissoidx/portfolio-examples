@@ -144,7 +144,7 @@ def parse_args(args=None):
     parser.add_argument('--dataset', choices=['cifar10', 'imagenet', 'generated'],
                         default='cifar10', help="Choose data")
     parser.add_argument("--input-files", type=str,
-                        nargs="+", help="Input data files")
+                        help="Input data files")
     parser.add_argument("--synthetic-data", type=str_to_bool, nargs="?", const=True, default=False,
                         help="No Host/IPU I/O, random data created on device")
     parser.add_argument("--mixup", type=str_to_bool, nargs="?", const=True, default=False,
