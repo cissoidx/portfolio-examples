@@ -35,7 +35,7 @@ poprun --host [hostname1,hostname2,hostname3,hostname4,hostname5,hostname6,hostn
       --vipu-server-host=[hostname-server] \
       --num-ilds=1 --mpi-global-args="--tag-output --allow-run-as-root --output-filename output --mca oob_tcp_if_include [interface_oob] --mca btl_tcp_if_include [interface_btl]" \
       --mpi-local-args="-x OPAL_PREFIX -x LD_LIBRARY_PATH -x PATH -x PYTHONPATH -x CPATH -x IPUOF_VIPU_API_TIMEOUT -x POPLAR_LOG_LEVEL -x POPLAR_SDK_ENABLED -x POPTORCH_CACHE_DIR -x POPLAR_ENGINE_OPTIONS" \
-      --vipu-partition=pod64_vit_1 \
+      --vipu-partition=pod128_vit \
       --vipu-cluster=[cluster_name] \
       --ipus-per-replica 4 \
       --executable-cache-path="/cachedir" \
