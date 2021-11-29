@@ -14,7 +14,6 @@
 
 #----------------------------------------------------------------------------------
 defaults: &defaults
-  custom_ops: True
   random_seed: 42
   dataloader_workers: 42
   ipus_per_replica: 4
