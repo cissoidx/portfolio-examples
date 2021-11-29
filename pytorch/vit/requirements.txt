@@ -1,0 +1,11 @@
+transformers==4.7.0
+datasets==1.8.0
+pyyaml==5.4.1
+wandb==0.12.1
+pytest==6.2.4
+pytest-pythonpath==0.7.3
+torchvision==0.10.0
+pillow==8.2.0
+attrdict==2.0.1
+pytest==6.2.4
+horovod==0.23.0

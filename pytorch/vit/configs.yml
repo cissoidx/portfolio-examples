@@ -1,0 +1,337 @@
+# Copyright (c) 2021 Graphcore Ltd. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#----------------------------------------------------------------------------------
+defaults: &defaults
+  custom_ops: True
+  random_seed: 42
+  dataloader_workers: 42
+  ipus_per_replica: 4
+  synthetic_data: False
+  optimizer: SGD
+  weight_decay: 0.0
+  recompute_checkpoint_every_layer: False
+  recompute_all_stages: False
+  attention_probs_dropout_prob: 0.0
+  dropout_prob: 0.1
+  layer_norm_eps: 1e-6
+  restore: False
+  restore_epochs_and_optimizer: False
+  init_from_in1k: False
+  prefetch_depth: 2
+  stochastic_rounding: True
+  half_partials: True
+  wandb: False
+  representation_size: null
+  pretrain: False
+  mixup: False
+  max_epochs: null
+  loss: CELoss
+  extra_aug: null
+  reduction_type: null
+  precision: '16.16'
+
+#----------------------------------------------------------------------------------
+b16_cifar10: &b16_cifar10
+  <<: *defaults
+
+  # Execution
+  batch_size: 17
+  training_steps: 2000
+  batches_per_step: 1
+  replication_factor: 4
+  gradient_accumulation: 128
+  layers_per_ipu: [3,3,3,3]
+  enable_rts: True
+  wandb_project_name: "torch-vit-cifar10"
+  checkpoint_save_steps: 500
+  recompute_checkpoint_every_layer: True
+
+  # Model
+  hidden_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  matmul_proportion: [0.3, 0.3, 0.3, 0.3]
+  mlp_dim: 3072
+  patches_size: 16
+  num_labels: 10
+
+  # Optimizer
+  optimizer: SGD
+  warmup_steps: 500
+  lr_schedule: cosine
+  learning_rate: 0.03
+  loss_scaling: 1.0
+  weight_decay: 0.0
+  momentum : 0.9
+
+  # Dataset
+  dataset: cifar10
+  checkpoint_file: "google/vit-base-patch16-224-in21k"
+  checkpoint_dir: "./output/ckpt-cifar10"
+
+#----------------------------------------------------------------------------------
+b16_cifar10_valid: &b16_cifar10_valid
+  <<: *defaults
+
+  # Execution
+  batch_size: 1
+  batches_per_step: 1
+  replication_factor: 1
+  gradient_accumulation: 8
+  layers_per_ipu: [3,3,3,3]
+
+  # Model
+  hidden_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  matmul_proportion: [0.3, 0.3, 0.3, 0.3]
+  mlp_dim: 3072
+  patches_size: 16
+  num_labels: 10
+
+  # Dataset
+  dataset: cifar10
+  input_files: "./data/cifar10"
+  checkpoint_file: "./output/ckpt-cifar10/cifar10_L_12_H_768_A_12_epoch_1.pt"
+  checkpoint_dir: "./output/ckpt-cifar10"
+
+#----------------------------------------------------------------------------------
+b16_imagenet1k: &b16_imagenet1k
+  <<: *defaults
+
+  # Execution
+  batch_size: 17
+  training_steps: 5000
+  batches_per_step: 1
+  replication_factor: 4
+  gradient_accumulation: 30
+  layers_per_ipu: [3,3,3,3]
+  enable_rts: True
+  wandb_project_name: "torch-vit-in1k"
+  checkpoint_save_steps: 500
+  recompute_checkpoint_every_layer: True
+
+  # Model
+  hidden_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  matmul_proportion: [0.3, 0.3, 0.3, 0.3]
+  mlp_dim: 3072
+  patches_size: 16
+  num_labels: 1000
+
+  # Optimizer
+  optimizer: SGD
+  warmup_steps: 500
+  lr_schedule: cosine
+  learning_rate: 0.1
+  loss_scaling: 128.0
+  weight_decay: 0.00001
+  momentum : 0.9
+
+  # Dataset
+  dataset: imagenet1k
+  input_files: "./data/imagenet1k/"
+  checkpoint_file: "google/vit-base-patch16-224-in21k"
+  checkpoint_dir: "./output/ckpt-in1k"
+
+#----------------------------------------------------------------------------------
+b16_imagenet1k_valid: &b16_imagenet1k_valid
+  <<: *defaults
+
+  # Execution
+  batch_size: 8
+  batches_per_step: 1
+  replication_factor: 1
+  gradient_accumulation: 1
+  layers_per_ipu: [3,3,3,3]
+
+  # Model
+  hidden_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  matmul_proportion: [0.3, 0.3, 0.3, 0.3]
+  mlp_dim: 3072
+  patches_size: 16
+  num_labels: 1000
+
+  # Dataset
+  dataset: imagenet1k
+  input_files: "./data/imagenet1k/"
+  checkpoint_file: "./output/ckpt-in1k/imagenet1k_L_12_H_768_A_12_epoch_8.pt"
+  checkpoint_dir: "./output/ckpt-in1k"
+
+#----------------------------------------------------------------------------------
+b16_in1k_pretrain: &b16_in1k_pretrain
+  <<: *defaults
+
+  # Execution
+  batch_size: 8
+  training_steps: 30000
+  max_epochs: 300
+  batches_per_step: 1
+  replication_factor: 4
+  gradient_accumulation: 128
+  layers_per_ipu: [3,3,3,3]
+  enable_rts: True
+  wandb: False
+  wandb_project_name: "torch-vit-pretrain"
+  checkpoint_save_steps: 500
+  pretrain: True
+  mixup: True
+  prefetch_depth: 2
+  extra_aug: "imagenet_policy"
+  reduction_type: "sum"
+
+  # Model
+  hidden_size: 768
+  representation_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  matmul_proportion: [0.3, 0.3, 0.3, 0.3]
+  mlp_dim: 3072
+  patches_size: 16
+  num_labels: 1000
+  attention_probs_dropout_prob: 0.1
+  drop_path_rate: 0.0
+
+  # Loss
+  # experimental, alpha should be positive
+  alpha: 0.5
+
+  # Optimizer
+  optimizer: SGD
+  warmup_steps: 10000
+  lr_schedule: cosine
+  learning_rate: 0.001
+  loss_scaling: 128
+  weight_decay: 0.004
+  momentum : 0.9
+
+  # Dataset
+  dataset: imagenet1k
+  input_files: "/mnt/public/data/imagenet/raw/imagenet-raw-data"
+  checkpoint_file: ""
+  checkpoint_dir: "./output/ckpt-in1k-pretrain"
+
+#----------------------------------------------------------------------------------
+b16_in1k_pretrain_valid: &b16_in1k_pretrain_valid
+  <<: *defaults
+
+  # Execution
+  batch_size: 8
+  batches_per_step: 1
+  replication_factor: 1
+  gradient_accumulation: 1
+  layers_per_ipu: [3,3,3,3]
+  pretrain: True
+
+  # Model
+  hidden_size: 768
+  representation_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  matmul_proportion: [0.3, 0.3, 0.3, 0.3]
+  mlp_dim: 3072
+  patches_size: 16
+  num_labels: 1000
+
+  # Dataset
+  dataset: imagenet1k
+  input_files: "./data/imagenet1k/"
+  checkpoint_file: "./output/ckpt-in1k-pretrain/imagenet1k_L_12_H_768_A_12_epoch_300.pt"
+  checkpoint_dir: "./output/ckpt-in1k-pretrain"
+
+#----------------------------------------------------------------------------------
+b16_in21k_pretrain: &b16_in21k_pretrain
+  <<: *defaults
+
+  # Execution
+  batch_size: 8
+  training_steps: 100000
+  max_epochs: 30
+  batches_per_step: 1
+  replication_factor: 4
+  gradient_accumulation: 32
+  layers_per_ipu: [3,3,3,3]
+  enable_rts: True
+  wandb: True
+  wandb_project_name: "torch-vit-pretrain"
+  checkpoint_save_steps: 500
+  pretrain: True
+  mixup: True
+  prefetch_depth: 2
+  extra_aug: False
+  init_from_in1k: True
+
+  # Model
+  hidden_size: 768
+  representation_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  matmul_proportion: [0.3, 0.3, 0.3, 0.3]
+  mlp_dim: 3072
+  patches_size: 16
+  num_labels: 10450
+  attention_probs_dropout_prob: 0.1
+  drop_path_rate: 0.
+
+  # Loss
+  # experimental, alpha should be positive
+  alpha: 1.0
+
+  # Optimizer
+  optimizer: SGD
+  warmup_steps: 10000
+  lr_schedule: consine
+  learning_rate: 0.001
+  loss_scaling: 128
+  weight_decay: 0.03
+  momentum : 0.9
+
+  # Dataset
+  dataset: imagenet21k
+  input_files: "./data/imagenet21k/"
+  # TODO: change checkpoint to best in1k checkpoint file
+  checkpoint_file: "/home/xud/vit-75524.pt"
+  checkpoint_dir: "output/ckpt-21k-pretrain"
+
+#----------------------------------------------------------------------------------
+b16_in21k_pretrain_valid: &b16_in21k_pretrain_valid
+  <<: *defaults
+
+  # Execution
+  batch_size: 8
+  batches_per_step: 1
+  replication_factor: 1
+  gradient_accumulation: 1
+  layers_per_ipu: [3,3,3,3]
+  pretrain: True
+
+  # Model
+  hidden_size: 768
+  representation_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  matmul_proportion: [0.3, 0.3, 0.3, 0.3]
+  mlp_dim: 3072
+  patches_size: 16
+  num_labels: 10450
+
+  # Dataset
+  dataset: imagenet21k
+  input_files: "/localdata/ai-datasets/imagenet21k_resized_new/"
+  checkpoint_file: "output/ckpt-21k-pretrain/imagenet21k_L_12_H_768_A_12_epoch_30.pt"
+  checkpoint_dir: "output/ckpt-21k-pretrain"
