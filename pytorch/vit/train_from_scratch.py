@@ -56,14 +56,10 @@ if __name__ == "__main__":
     # Build config from args
     config = parse_args()
 
-    print('aaaa',type(config))
-    print('+++++',config.replication_factor)
     if popdist.isPopdistEnvSet():
         init_popdist(config)
     else:
         config.use_popdist = False
-
-    print('-----',config.replication_factor)
 
     config.global_batch_size = config.replication_factor * \
         config.gradient_accumulation * config.batch_size
