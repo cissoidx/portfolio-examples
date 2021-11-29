@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-python train_from_scratch.py --config b16_in1k_pretrain --prefetch-depth 1 --gradient-accumulation 1170 --batch-size 14 --dataloader-workers 96
+python train_from_scratch.py --config b16_in1k_pretrain --prefetch-depth 1 --gradient-accumulation 1170 --batch-size 14 --dataloader-workers 96 --rebatch-size 2048

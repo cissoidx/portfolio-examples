@@ -20,7 +20,7 @@ from dataset.customized_randaugment import ImageNetPolicy
 normalization_parameters = {"mean": [0.5, 0.5, 0.5], "std": [0.5, 0.5, 0.5]}
 
 
-def get_preprocessing_pipeline(train, input_size=224, half_precision=False, normalize=True, extra_aug=None, byteio=True):
+def get_preprocessing_pipeline(train, input_size=224, half_precision=False, normalize=True, extra_aug=None, byteio=False):
     """
     Return optimized pipeline, which contains fused transformations.
     """

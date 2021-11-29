@@ -41,7 +41,6 @@ def get_options(config):
 
     # Poptorch options
     opts = create_model(config)
-    opts.enableExecutableCaching("/localdata/xud/cachedir")
 
     opts.autoRoundNumIPUs(True)
     opts.deviceIterations(config.batches_per_step)

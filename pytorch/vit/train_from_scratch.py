@@ -142,7 +142,6 @@ if __name__ == "__main__":
         input_data, labels = datum[0], datum[1]
         input_data, labels_a, labels_b, lam = mixup_data(
             input_data, labels, config.alpha)
-        input_data = (input_data*255).byte()
         datum = [input_data, labels_a, labels_b, lam]
     train_model.compile(*datum)
     duration_compilation = time.perf_counter() - start_compile
