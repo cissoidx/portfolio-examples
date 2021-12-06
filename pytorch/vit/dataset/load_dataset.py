@@ -132,6 +132,7 @@ def collate_fn(batch, alpha):
     # print(input_data.shape, labels.shape)
     mixed_x, y_a, y_b, lam = mixup_data(input_data, labels, alpha)
     # print(mixed_x.shape, y_a.shape, y_b.shape, lam.shape)
+    mixed_x = mixed_x.byte()
     return mixed_x, y_a, y_b, lam
 
 

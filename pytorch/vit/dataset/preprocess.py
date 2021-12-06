@@ -44,13 +44,7 @@ def get_preprocessing_pipeline(train, input_size=224, half_precision=False, norm
         # Return tensor
         pipeline_steps.append(NormalizeToTensor.pil_to_tensor)
 
-    if half_precision:
-        pipeline_steps.append(ToHalf())
-    else:
-        pipeline_steps.append(ToFloat())
-
-    if byteio:
-        pipeline_steps.append(ToByte())
+    pipeline_steps.append(ToByte())
 
     return transforms.Compose(pipeline_steps)
 

@@ -304,6 +304,7 @@ class VisionTransformer(nn.Module):
         self.loss = LOSS[config.loss]
 
     def forward(self, x, labels=None, labels_b=None, lam=None):
+        x = x.half()/255.0
         x = self.embeddings(x)
         x = self.encoder(x)
         pre_logits = x[:, 0]
